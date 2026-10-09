@@ -1,0 +1,18 @@
+# Large media files (hosted on Google Cloud Storage)
+media/
+web/media/
+*.mp4
+*.m4a
+*.wav
+*.flac
+*.mp3
+*.aif
+
+# Separation pipeline & virtualenv
+separated/
+.venv/
+
+# System & temporary files
+.DS_Store
+Thumbs.db
+screenshot*.png

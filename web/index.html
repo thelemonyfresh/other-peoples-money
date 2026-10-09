@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CARMEN MICRO 2000 // OTHER PEOPLE'S MONEY</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #030712;
+      --screen-bg: #060e20;
+      --panel-bg: #081329;
+      --panel-border: #1d457a;
+      --panel-border-hi: #3b82f6;
+      --terminal-cyan: #00f0ff;
+      --terminal-green: #00ff66;
+      --terminal-amber: #ffb703;
+      --terminal-dim: #1e3a68;
+      --text-white: #ffffff;
+      --btn-bg: #0e2246;
+      --btn-bevel-hi: #538bd4;
+      --btn-bevel-lo: #020710;
+      --ticker-bg: #003899;
+    }
+
+    /* Enforce strictly non-bootstrapy, zero-radius pixel terminal geometry */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      border-radius: 0 !important;
+      -webkit-font-smoothing: none;
+      -moz-osx-font-smoothing: unset;
+      text-rendering: pixelated;
+    }
+
+    body {
+      background-color: #000000;
+      color: var(--terminal-cyan);
+      font-family: 'VT323', monospace;
+      font-size: 19px;
+      line-height: 1.25;
+      letter-spacing: 1px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Full Terminal Screen View - No Outer Bounding Frame */
+    .terminal-casing {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: transparent;
+      padding: 0;
+      margin: 0;
+      border: none;
+      box-shadow: none;
+    }
+
+    /* Top Terminal Branding Header */
+    .carmen-header {
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid #163866;
+      padding: 10px 16px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .brand-left {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+    }
+
+    .carmen-logo {
+      font-size: 38px;
+      font-weight: 900;
+      color: #ffffff;
+      letter-spacing: 5px;
+      text-shadow: 2px 2px 0px #0055ff, -1px -1px 0px #00f0ff;
+    }
+
+    .brand-right {
+      text-align: right;
+    }
+
+    .micro-title {
+      font-size: 32px;
+      color: var(--terminal-cyan);
+      letter-spacing: 3px;
+      text-shadow: 2px 2px 0px #002b80;
+    }
+
+    .micro-sub {
+      font-size: 13px;
+      color: #93c5fd;
+      letter-spacing: 1px;
+    }
+
+    /* Workspace 2-Column Grid - Pure Terminal Columns */
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 290px;
+      gap: 14px;
+      flex: 1;
+      padding: 0 16px 8px;
+      margin-bottom: 0;
+      min-height: 0;
+      width: 100%;
+    }
+
+    /* Terminal Sections - Clean CRT Displays */
+    .term-window {
+      background: transparent;
+      border: none;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+    }
+
+    .chapter-sidebar {
+      border: 1px solid #143560;
+      padding: 6px 8px;
+      background: #020611;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      min-width: 0;
+      height: 100%;
+      max-height: calc(100vh - 130px);
+    }
+
+    /* Video on the Screen (Framed with CRT Bezel Border) */
+    .video-screen {
+      background: #000;
+      width: 100%;
+      max-height: calc(100vh - 290px);
+      aspect-ratio: 854 / 482;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #2563eb;
+      outline: 1px solid #0a1e3f;
+      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.9), 0 0 12px rgba(37, 99, 235, 0.25);
+    }
+
+    .video-screen:fullscreen {
+      width: 100vw;
+      height: 100vh;
+      max-height: none;
+      aspect-ratio: auto;
+      border: none;
+      outline: none;
+      box-shadow: none;
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    /* Phosphor Status Bar (under video) */
+    .readout-strip {
+      background: transparent;
+      border: none;
+      padding: 4px 0 2px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 17px;
+      color: var(--terminal-green);
+      min-width: 0;
+      flex-shrink: 0;
+    }
+
+    .readout-strip .active-ch {
+      color: #fff;
+      font-weight: 700;
+    }
+
+    /* Scrubber Timeline - Direct on Screen */
+    .timeline-box {
+      padding: 0;
+      background: transparent;
+      border: none;
+      margin: 3px 0 6px;
+      flex-shrink: 0;
+    }
+
+    .scrubber-track {
+      position: relative;
+      height: 12px;
+      background: #000;
+      border: 1px solid #163666;
+      cursor: pointer;
+    }
+
+    .scrubber-fill {
+      height: 100%;
+      background: repeating-linear-gradient(
+        90deg,
+        #00a6fb 0px,
+        #00a6fb 4px,
+        #006494 4px,
+        #006494 6px
+      );
+      width: 0%;
+      pointer-events: none;
+    }
+
+    .chapter-tick {
+      position: absolute;
+      top: -2px;
+      width: 3px;
+      height: 14px;
+      background: var(--terminal-amber);
+      pointer-events: none;
+    }
+
+    /* Transport Deck - Direct on Screen */
+    .control-deck {
+      padding: 0;
+      background: transparent;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 6px;
+      flex-shrink: 0;
+    }
+
+    .deck-buttons {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    /* 1990s 3D Hardware Bevel Buttons */
+    .term-btn {
+      background: var(--btn-bg);
+      border-top: 2px solid var(--btn-bevel-hi);
+      border-left: 2px solid var(--btn-bevel-hi);
+      border-right: 2px solid var(--btn-bevel-lo);
+      border-bottom: 2px solid var(--btn-bevel-lo);
+      color: #ffffff;
+      font-family: 'VT323', monospace;
+      font-size: 18px;
+      padding: 4px 10px;
+      cursor: pointer;
+      user-select: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: 1px;
+      white-space: nowrap;
+    }
+
+    .term-btn:active {
+      border-top: 2px solid var(--btn-bevel-lo);
+      border-left: 2px solid var(--btn-bevel-lo);
+      border-right: 2px solid var(--btn-bevel-hi);
+      border-bottom: 2px solid var(--btn-bevel-hi);
+      background: #07152c;
+      transform: translate(1px, 1px);
+    }
+
+    .term-btn.primary {
+      background: #0052cc;
+      color: #fff;
+    }
+
+    .term-btn.active {
+      background: var(--terminal-cyan);
+      color: #000;
+      border-top: 2px solid #fff;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #005577;
+      border-bottom: 2px solid #005577;
+      font-weight: 700;
+    }
+
+    /* Audio Mixer Strip & Presets - Direct on Screen */
+    .audio-matrix-panel {
+      padding: 0;
+      background: transparent;
+      border: none;
+      display: flex;
+      align-items: center;
+      gap: 8px 12px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+
+    .fader-channel {
+      background: transparent;
+      border: none;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: 1 1 240px;
+      min-width: 200px;
+    }
+
+    .fader-label {
+      font-size: 16px;
+      white-space: nowrap;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+
+    .fader-label.dx { color: var(--terminal-green); }
+    .fader-label.mx { color: var(--terminal-amber); }
+
+    .fader-mute-btn {
+      padding: 2px 6px;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .matrix-presets {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+
+    .matrix-presets .term-btn {
+      padding: 4px 8px;
+      font-size: 16px;
+    }
+
+    /* 1990s Hardware Fader Slider */
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      flex: 1 1 40px;
+      min-width: 40px !important;
+      width: 100%;
+      height: 10px;
+      background: #000;
+      border: 1px solid #163666;
+      outline: none;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 22px;
+      background: #c0c0c0;
+      border-top: 2px solid #ffffff;
+      border-left: 2px solid #ffffff;
+      border-right: 2px solid #404040;
+      border-bottom: 2px solid #404040;
+      cursor: pointer;
+    }
+
+    input[type=range]::-moz-range-thumb {
+      width: 14px;
+      height: 22px;
+      background: #c0c0c0;
+      border-top: 2px solid #ffffff;
+      border-left: 2px solid #ffffff;
+      border-right: 2px solid #404040;
+      border-bottom: 2px solid #404040;
+      cursor: pointer;
+    }
+
+    .fader-readout {
+      width: 42px;
+      text-align: right;
+      color: #fff;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    /* Right: Terminal Chapter Record List - Direct Terminal Lines */
+    .chapter-sidebar-header {
+      color: var(--terminal-amber);
+      font-size: 17px;
+      letter-spacing: 1.5px;
+      padding: 0 0 4px 0;
+      border-bottom: 1px solid #183c6b;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .chapter-scrollbox {
+      background: transparent;
+      padding: 0 4px 0 0;
+      overflow-y: auto;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .chapter-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 3px 6px;
+      background: transparent;
+      border: none;
+      margin-bottom: 1px;
+      cursor: pointer;
+      font-size: 17px;
+      color: #8bb8e8;
+      user-select: none;
+    }
+
+    .chapter-row:hover {
+      background: #0d2752;
+      color: #ffffff;
+    }
+
+    .chapter-row.active {
+      background: var(--terminal-cyan);
+      color: #000000;
+      font-weight: 700;
+    }
+
+    .chapter-row .ch-prefix {
+      color: var(--terminal-amber);
+      font-weight: 700;
+      margin-right: 6px;
+    }
+
+    .chapter-row.active .ch-prefix {
+      color: #000000;
+    }
+
+    /* Bottom Wall Street Marquee */
+    .stock-ticker-strip {
+      background: var(--ticker-bg);
+      border-top: 1px solid #1a56c4;
+      color: #ffffff;
+      padding: 4px 0;
+      font-size: 22px;
+      letter-spacing: 2px;
+      overflow: hidden;
+      white-space: nowrap;
+      user-select: none;
+      margin-top: auto;
+      flex-shrink: 0;
+    }
+
+    .ticker-roll {
+      display: inline-block;
+      padding-left: 100%;
+      animation: ticker-motion 40s linear infinite;
+    }
+
+    @keyframes ticker-motion {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-100%); }
+    }
+
+    /* Retro ASCII Scrollbars */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #000; border-left: 1px solid #102544; }
+    ::-webkit-scrollbar-thumb {
+      background: #153460;
+    }
+
+    /* Responsive Breakpoints */
+    @media (max-width: 1040px) {
+      .workspace-grid {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 0 12px 8px;
+        gap: 12px;
+      }
+      .video-screen {
+        max-height: 52vh;
+      }
+      .chapter-sidebar {
+        height: auto;
+      }
+      .chapter-scrollbox {
+        max-height: 280px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .fader-channel {
+        flex: 1 1 100%;
+        width: 100%;
+      }
+      .matrix-presets {
+        width: 100%;
+        display: flex;
+        gap: 6px;
+      }
+      .matrix-presets .term-btn {
+        flex: 1 1 0;
+        min-width: 0;
+        justify-content: center;
+        font-size: 15px;
+        padding: 4px 4px;
+      }
+    }
+
+    @media (max-width: 500px) {
+      .carmen-header {
+        padding: 6px 10px;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+      .carmen-logo {
+        font-size: 26px;
+      }
+      .micro-title {
+        font-size: 20px;
+      }
+      .micro-sub {
+        font-size: 11px;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+      }
+      .readout-strip {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+        font-size: 15px;
+      }
+      .control-deck {
+        gap: 4px;
+      }
+      .deck-buttons {
+        gap: 4px;
+        width: 100%;
+      }
+      .deck-buttons .term-btn {
+        padding: 4px 6px;
+        font-size: 14px;
+        flex: 1 1 calc(33.333% - 4px);
+        min-width: 75px;
+        justify-content: center;
+      }
+      .keys-hint {
+        display: none;
+      }
+      .fader-label {
+        font-size: 14px;
+      }
+      .fader-readout {
+        font-size: 14px;
+        width: 36px;
+      }
+      .fader-mute-btn {
+        font-size: 13px;
+        padding: 2px 5px;
+      }
+      .matrix-presets .term-btn {
+        font-size: 13px;
+        padding: 4px 2px;
+      }
+      .stock-ticker-strip {
+        font-size: 16px;
+        padding: 2px 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="terminal-casing">
+
+    <!-- Top Carmen Header -->
+    <header class="carmen-header">
+      <div class="brand-left">
+        <div class="carmen-logo">CARMEN</div>
+      </div>
+      <div class="brand-right">
+        <div class="micro-title">MICRO 2000</div>
+        <div class="micro-sub">WALL STREET // FINANCIAL MONITOR</div>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="workspace-grid">
+
+      <!-- Left: Video & Controls -->
+      <section class="term-window">
+
+        <!-- Clean Video (No overlay, 100% crisp) -->
+        <div class="video-screen" id="videoWrapper">
+          <video id="mainVideo" playsinline preload="auto" src="https://storage.googleapis.com/thelemonyfresh_media_share/other_peoples_money/full_video.mp4">
+          </video>
+        </div>
+
+        <!-- Phosphor Status Line Under Video -->
+        <div class="readout-strip">
+          <div>
+            <span>CURRENT SCENE: </span>
+            <span class="active-ch" id="activeChapterLabel">CH 01 // OPENING / WALL STREET</span>
+          </div>
+          <div id="timeDisplay" style="color: #fff;">00:00:00 / 01:40:56</div>
+        </div>
+
+        <!-- Timeline Scrubber -->
+        <div class="timeline-box">
+          <div class="scrubber-track" id="timelineBar">
+            <div class="scrubber-fill" id="timelineFill"></div>
+            <div id="timelineTicks"></div>
+          </div>
+        </div>
+
+        <!-- Hardware Pushbutton Transport Deck -->
+        <div class="control-deck">
+          <div class="deck-buttons">
+            <button class="term-btn" id="prevChapterBtn">[◄◄ PREV CH]</button>
+            <button class="term-btn primary" id="playBtn">
+              <span id="playIcon">►</span> [PLAY]
+            </button>
+            <button class="term-btn" id="nextChapterBtn">[NEXT CH ►►]</button>
+            <button class="term-btn" id="rewindBtn">[◄ -5 SEC]</button>
+            <button class="term-btn" id="forwardBtn">[+5 SEC ►]</button>
+            <button class="term-btn" id="fullscreenBtn">[⛶ FULLSCREEN]</button>
+          </div>
+          <div style="font-size: 15px; color: #7dd3fc;" class="keys-hint">
+            KEYS: [SPACE]=PLAY/PAUSE | [F]=FULLSCREEN | [P/N]=CHAPTER
+          </div>
+        </div>
+
+        <!-- Audio Stem Controls & Presets -->
+        <div class="audio-matrix-panel">
+          <!-- Dialogue Stem Fader -->
+          <div class="fader-channel">
+            <span class="fader-label dx">DX: DIALOGUE</span>
+            <input type="range" id="dialogueVol" min="0" max="1" step="0.01" value="1">
+            <span class="fader-readout" id="dialogueVal">100%</span>
+            <button class="term-btn fader-mute-btn" id="muteDialogueBtn">[MUTE]</button>
+          </div>
+
+          <!-- Soundtrack Stem Fader -->
+          <div class="fader-channel">
+            <span class="fader-label mx">MX: SCORE</span>
+            <input type="range" id="soundtrackVol" min="0" max="1" step="0.01" value="1">
+            <span class="fader-readout" id="soundtrackVal">100%</span>
+            <button class="term-btn fader-mute-btn" id="muteSoundtrackBtn">[MUTE]</button>
+          </div>
+
+          <!-- Solo & Master Presets -->
+          <div class="matrix-presets">
+            <button class="term-btn" id="presetDialogue">[DIALOGUE SOLO]</button>
+            <button class="term-btn" id="presetSoundtrack">[SCORE SOLO]</button>
+            <button class="term-btn active" id="presetFull">[MASTER SUM]</button>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Right: Chapter Record Index -->
+      <aside class="term-window chapter-sidebar">
+        <div class="chapter-sidebar-header">
+          <span>CHAPTER INDEX // 23 RECORDS</span>
+          <span style="color: #64748b; font-size: 14px;">[SCROLL]</span>
+        </div>
+        <div class="chapter-scrollbox" id="chapterListContainer">
+          <!-- Populated by JavaScript -->
+        </div>
+      </aside>
+
+    </main>
+
+    <!-- 1991 Wall Street Stock Ticker -->
+    <div class="stock-ticker-strip">
+      <div class="ticker-roll">
+        NEWC 17 +1 1/2 ...... CAPITAL ADEQUACY: 7.43N ...... RETURN ON ASSETS: 58% ...... TudHP 67 3/8 ...... BRF 39 3/4 ...... NWmB 18 3/8 ...... NMfd 52 1/2 ...... GARFIELD INVESTMENTS: LONG WIRE & CABLE ...... VOLUME TRADED TODAY: 1,814,800 ...... MARKET STATUS: UP 1 1/2 POINTS ......
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Audio Stems -->
+  <audio id="audioDialogue" preload="auto" src="https://storage.googleapis.com/thelemonyfresh_media_share/other_peoples_money/full_dialogue.m4a"></audio>
+  <audio id="audioSoundtrack" preload="auto" src="https://storage.googleapis.com/thelemonyfresh_media_share/other_peoples_money/full_soundtrack.m4a"></audio>
+
+  <script>
+    const fullFilmChapters = [
+      { id: 1, start: "00:00:00", sec: 0, title: "Opening / Wall Street" },
+      { id: 2, start: "00:04:59", sec: 299, title: "Target Analysis" },
+      { id: 3, start: "00:09:36", sec: 576, title: "New England Wire & Cable" },
+      { id: 4, start: "00:14:14", sec: 854, title: "Stock Accumulation" },
+      { id: 5, start: "00:17:09", sec: 1029, title: "The Strategy Meeting" },
+      { id: 6, start: "00:20:46", sec: 1246, title: "Jorgy's Office" },
+      { id: 7, start: "00:25:03", sec: 1503, title: "Kate Sullivan Enters" },
+      { id: 8, start: "00:29:00", sec: 1740, title: "Dinner Negotiations" },
+      { id: 9, start: "00:31:59", sec: 1919, title: "Tactical Maneuvers" },
+      { id: 10, start: "00:36:48", sec: 2208, title: "Shareholder Defense" },
+      { id: 11, start: "00:45:07", sec: 2707, title: "Counter-Proposal" },
+      { id: 12, start: "00:50:10", sec: 3010, title: "The Plant Floor" },
+      { id: 13, start: "00:53:23", sec: 3203, title: "Settlement Talks" },
+      { id: 14, start: "00:56:37", sec: 3397, title: "Personal Stakes" },
+      { id: 15, start: "01:01:24", sec: 3684, title: "The Proxy Fight" },
+      { id: 16, start: "01:04:57", sec: 3897, title: "Preparing the Vote" },
+      { id: 17, start: "01:09:08", sec: 4148, title: "Annual Meeting Opens" },
+      { id: 18, start: "01:13:04", sec: 4384, title: "Jorgy's Address" },
+      { id: 19, start: "01:18:09", sec: 4689, title: "Larry's 'Greed' Speech" },
+      { id: 20, start: "01:24:46", sec: 5086, title: "The Ballot Count" },
+      { id: 21, start: "01:30:46", sec: 5446, title: "Aftermath" },
+      { id: 22, start: "01:33:52", sec: 5632, title: "Airbags & The Future" },
+      { id: 23, start: "01:37:53", sec: 5873, title: "End Credits" }
+    ];
+
+    const video = document.getElementById('mainVideo');
+    const videoWrapper = document.getElementById('videoWrapper');
+    const playBtn = document.getElementById('playBtn');
+    const playIcon = document.getElementById('playIcon');
+    const prevChapterBtn = document.getElementById('prevChapterBtn');
+    const nextChapterBtn = document.getElementById('nextChapterBtn');
+    const rewindBtn = document.getElementById('rewindBtn');
+    const forwardBtn = document.getElementById('forwardBtn');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const timelineBar = document.getElementById('timelineBar');
+    const timelineFill = document.getElementById('timelineFill');
+    const timelineTicks = document.getElementById('timelineTicks');
+    const timeDisplay = document.getElementById('timeDisplay');
+    const activeChapterLabel = document.getElementById('activeChapterLabel');
+    const chapterListContainer = document.getElementById('chapterListContainer');
+
+    const audioDialogue = document.getElementById('audioDialogue');
+    const audioSoundtrack = document.getElementById('audioSoundtrack');
+    const dialogueVol = document.getElementById('dialogueVol');
+    const dialogueVal = document.getElementById('dialogueVal');
+    const soundtrackVol = document.getElementById('soundtrackVol');
+    const soundtrackVal = document.getElementById('soundtrackVal');
+    const muteDialogueBtn = document.getElementById('muteDialogueBtn');
+    const muteSoundtrackBtn = document.getElementById('muteSoundtrackBtn');
+    const presetDialogue = document.getElementById('presetDialogue');
+    const presetSoundtrack = document.getElementById('presetSoundtrack');
+    const presetFull = document.getElementById('presetFull');
+
+    // Video native audio muted; stems deliver audio
+    video.muted = true;
+
+    // Local dev optimization: If running on localhost and local media is present, use local files
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      fetch('media/full_video.mp4', { method: 'HEAD' })
+        .then(res => {
+          if (res.ok) {
+            video.src = 'media/full_video.mp4';
+            audioDialogue.src = 'media/full_dialogue.m4a';
+            audioSoundtrack.src = 'media/full_soundtrack.m4a';
+          }
+        })
+        .catch(() => {});
+    }
+
+    function formatTime(s) {
+      if (isNaN(s)) return "00:00:00";
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const sec = Math.floor(s % 60).toString().padStart(2, '0');
+      return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${sec}`;
+    }
+
+    function renderChapters() {
+      chapterListContainer.innerHTML = '';
+      timelineTicks.innerHTML = '';
+      const totalDuration = 6056.3;
+
+      fullFilmChapters.forEach((ch, idx) => {
+        const item = document.createElement('div');
+        item.className = 'chapter-row' + (idx === 0 ? ' active' : '');
+        item.dataset.sec = ch.sec;
+        item.innerHTML = `
+          <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 6px;">
+            <span class="ch-prefix">[CH ${ch.id.toString().padStart(2, '0')}]</span>
+            <span>${ch.title}</span>
+          </div>
+          <span style="font-size: 15px; opacity: 0.85;">${ch.start}</span>
+        `;
+        item.addEventListener('click', () => {
+          seekToChapter(ch.sec);
+        });
+        chapterListContainer.appendChild(item);
+
+        if (ch.sec > 0) {
+          const tick = document.createElement('div');
+          tick.className = 'chapter-tick';
+          const leftPct = (ch.sec / totalDuration) * 100;
+          tick.style.left = leftPct + '%';
+          tick.title = `Ch ${ch.id}: ${ch.title} (${ch.start})`;
+          timelineTicks.appendChild(tick);
+        }
+      });
+    }
+
+    function seekToChapter(sec) {
+      video.currentTime = sec;
+      syncAudioToVideo();
+      if (video.paused) togglePlay();
+      updateActiveChapterUI();
+    }
+
+    function updateActiveChapterUI() {
+      const cur = video.currentTime;
+      let activeIndex = 0;
+      for (let i = 0; i < fullFilmChapters.length; i++) {
+        if (cur >= fullFilmChapters[i].sec) {
+          activeIndex = i;
+        } else {
+          break;
+        }
+      }
+
+      const activeCh = fullFilmChapters[activeIndex];
+      if (activeCh) {
+        activeChapterLabel.textContent = `CH ${activeCh.id.toString().padStart(2, '0')} // ${activeCh.title.toUpperCase()}`;
+        
+        const items = chapterListContainer.querySelectorAll('.chapter-row');
+        items.forEach((el, idx) => {
+          if (idx === activeIndex) {
+            el.classList.add('active');
+          } else {
+            el.classList.remove('active');
+          }
+        });
+      }
+    }
+
+    prevChapterBtn.addEventListener('click', () => {
+      const cur = video.currentTime;
+      let prevSec = 0;
+      for (let i = fullFilmChapters.length - 1; i >= 0; i--) {
+        if (fullFilmChapters[i].sec < cur - 2) {
+          prevSec = fullFilmChapters[i].sec;
+          break;
+        }
+      }
+      seekToChapter(prevSec);
+    });
+
+    nextChapterBtn.addEventListener('click', () => {
+      const cur = video.currentTime;
+      let nextSec = (video.duration || 6056);
+      for (let i = 0; i < fullFilmChapters.length; i++) {
+        if (fullFilmChapters[i].sec > cur + 1) {
+          nextSec = fullFilmChapters[i].sec;
+          break;
+        }
+      }
+      seekToChapter(nextSec);
+    });
+
+    function togglePlay() {
+      if (video.paused) {
+        syncAudioToVideo();
+        audioDialogue.play();
+        audioSoundtrack.play();
+        video.play();
+        playIcon.textContent = '❚❚';
+        playBtn.childNodes[2].nodeValue = ' [PAUSE]';
+      } else {
+        video.pause();
+        audioDialogue.pause();
+        audioSoundtrack.pause();
+        playIcon.textContent = '►';
+        playBtn.childNodes[2].nodeValue = ' [PLAY]';
+      }
+    }
+
+    playBtn.addEventListener('click', togglePlay);
+    video.addEventListener('click', togglePlay);
+
+    function syncAudioToVideo() {
+      const vTime = video.currentTime;
+      if (Math.abs(audioDialogue.currentTime - vTime) > 0.05) {
+        audioDialogue.currentTime = vTime;
+      }
+      if (Math.abs(audioSoundtrack.currentTime - vTime) > 0.05) {
+        audioSoundtrack.currentTime = vTime;
+      }
+    }
+
+    video.addEventListener('seeking', syncAudioToVideo);
+    video.addEventListener('seeked', syncAudioToVideo);
+
+    video.addEventListener('timeupdate', () => {
+      syncAudioToVideo();
+      const dur = video.duration || 6056.3;
+      const pct = (video.currentTime / dur) * 100;
+      timelineFill.style.width = pct + '%';
+      timeDisplay.textContent = `${formatTime(video.currentTime)} / ${formatTime(dur)}`;
+      updateActiveChapterUI();
+    });
+
+    timelineBar.addEventListener('click', (e) => {
+      const rect = timelineBar.getBoundingClientRect();
+      const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      const dur = video.duration || 6056.3;
+      video.currentTime = ratio * dur;
+      syncAudioToVideo();
+    });
+
+    rewindBtn.addEventListener('click', () => {
+      video.currentTime = Math.max(0, video.currentTime - 5);
+      syncAudioToVideo();
+    });
+
+    forwardBtn.addEventListener('click', () => {
+      video.currentTime = Math.min(video.duration, video.currentTime + 5);
+      syncAudioToVideo();
+    });
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        if (video.requestFullscreen) {
+          video.requestFullscreen();
+        } else if (videoWrapper.requestFullscreen) {
+          videoWrapper.requestFullscreen();
+        }
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+
+    fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+    // Audio Fader logic
+    dialogueVol.addEventListener('input', (e) => {
+      const val = parseFloat(e.target.value);
+      audioDialogue.volume = val;
+      dialogueVal.textContent = Math.round(val * 100) + '%';
+      clearChipActive();
+    });
+
+    soundtrackVol.addEventListener('input', (e) => {
+      const val = parseFloat(e.target.value);
+      audioSoundtrack.volume = val;
+      soundtrackVal.textContent = Math.round(val * 100) + '%';
+      clearChipActive();
+    });
+
+    muteDialogueBtn.addEventListener('click', () => {
+      if (audioDialogue.volume > 0) {
+        dialogueVol.value = 0;
+        audioDialogue.volume = 0;
+        dialogueVal.textContent = '0%';
+        muteDialogueBtn.textContent = '[UNMUTE]';
+      } else {
+        dialogueVol.value = 1;
+        audioDialogue.volume = 1;
+        dialogueVal.textContent = '100%';
+        muteDialogueBtn.textContent = '[MUTE]';
+      }
+      clearChipActive();
+    });
+
+    muteSoundtrackBtn.addEventListener('click', () => {
+      if (audioSoundtrack.volume > 0) {
+        soundtrackVol.value = 0;
+        audioSoundtrack.volume = 0;
+        soundtrackVal.textContent = '0%';
+        muteSoundtrackBtn.textContent = '[UNMUTE]';
+      } else {
+        soundtrackVol.value = 1;
+        audioSoundtrack.volume = 1;
+        soundtrackVal.textContent = '100%';
+        muteSoundtrackBtn.textContent = '[MUTE]';
+      }
+      clearChipActive();
+    });
+
+    function clearChipActive() {
+      [presetDialogue, presetSoundtrack, presetFull].forEach(b => b.classList.remove('active'));
+    }
+
+    function setPreset(dVal, sVal, activeEl) {
+      clearChipActive();
+      if (activeEl) activeEl.classList.add('active');
+      dialogueVol.value = dVal; audioDialogue.volume = dVal; dialogueVal.textContent = Math.round(dVal * 100) + '%';
+      soundtrackVol.value = sVal; audioSoundtrack.volume = sVal; soundtrackVal.textContent = Math.round(sVal * 100) + '%';
+      muteDialogueBtn.textContent = dVal === 0 ? '[UNMUTE]' : '[MUTE]';
+      muteSoundtrackBtn.textContent = sVal === 0 ? '[UNMUTE]' : '[MUTE]';
+    }
+
+    presetDialogue.addEventListener('click', () => setPreset(1, 0, presetDialogue));
+    presetSoundtrack.addEventListener('click', () => setPreset(0, 1, presetSoundtrack));
+    presetFull.addEventListener('click', () => setPreset(1, 1, presetFull));
+
+    window.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT') return;
+      if (e.code === 'Space') {
+        e.preventDefault();
+        togglePlay();
+      } else if (e.code === 'ArrowLeft') {
+        video.currentTime = Math.max(0, video.currentTime - 5);
+      } else if (e.code === 'ArrowRight') {
+        video.currentTime = Math.min(video.duration, video.currentTime + 5);
+      } else if (e.key === 'p' || e.key === 'P') {
+        prevChapterBtn.click();
+      } else if (e.key === 'n' || e.key === 'N') {
+        nextChapterBtn.click();
+      } else if (e.key === 'f' || e.key === 'F') {
+        toggleFullscreen();
+      } else if (e.key === '1') {
+        presetDialogue.click();
+      } else if (e.key === '2') {
+        presetSoundtrack.click();
+      } else if (e.key === '3') {
+        presetFull.click();
+      }
+    });
+
+    renderChapters();
+  </script>
+</body>
+</html>
