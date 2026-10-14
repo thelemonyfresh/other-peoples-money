@@ -13,6 +13,7 @@ An interactive retro-terminal web player for Norman Jewison's 1991 Wall Street c
   - Granular faders and instant hardware mutes per stem.
 - **23 Scened Chapter Records**: One-click seeking across all major dramatic scenes and speeches.
 - **VHS Shuttle Search**: `[◄◄ REW]` / `[FF ►►]` step through 1x–16x (REW) and 2x–16x (FF) from the current position, with a VCR on-screen display and pitch-shifted stem audio up to 4x (silent above, like a real deck). Rewind plays pre-reversed copies of the media (see `pipeline_reverse.sh`).
+- **Pitch Lock**: `[PITCH LOCK]` keeps stem audio at its normal pitch during FF/REW (browser time-stretching) instead of the default tape-style pitch shift.
 - **4:3 Aspect Mode**: `[ASPECT]` toggles between the original widescreen frame and a centered 4:3 pan-and-scan crop, carried into fullscreen for 4:3 video monitors.
 - **Responsive Multi-Device Layout**: Fully adaptive across desktop workstations, tablets, and mobile devices.
 - **Hardware Keyboard Control**:

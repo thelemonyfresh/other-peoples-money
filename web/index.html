@@ -686,6 +686,7 @@
             <button class="term-btn" id="rewindBtn">[◄ -5 SEC]</button>
             <button class="term-btn" id="forwardBtn">[+5 SEC ►]</button>
             <button class="term-btn" id="aspectBtn">[ASPECT: WIDE]</button>
+            <button class="term-btn" id="pitchBtn">[PITCH LOCK: OFF]</button>
             <button class="term-btn" id="fullscreenBtn">[⛶ FULLSCREEN]</button>
           </div>
           <div style="font-size: 15px; color: #7dd3fc;" class="keys-hint">
@@ -812,6 +813,7 @@
     const shuttleRewBtn = document.getElementById('shuttleRewBtn');
     const shuttleFfBtn = document.getElementById('shuttleFfBtn');
     const aspectBtn = document.getElementById('aspectBtn');
+    const pitchBtn = document.getElementById('pitchBtn');
     const vhsOsd = document.getElementById('vhsOsd');
 
     // Video native audio muted; stems deliver audio
@@ -968,10 +970,21 @@
     let resumeAfterShuttle = false;
     let cueToken = 0;
 
-    [audioDialogue, audioSoundtrack, revDialogue, revSoundtrack].forEach(a => {
-      a.preservesPitch = false;
-      a.webkitPreservesPitch = false;
-    });
+    // Pitch lock: OFF = tape-style pitch shift during FF/REW, ON = time-stretch at normal pitch
+    function setPitchLock(on) {
+      [audioDialogue, audioSoundtrack, revDialogue, revSoundtrack].forEach(a => {
+        a.preservesPitch = on;
+        a.webkitPreservesPitch = on;
+      });
+      pitchBtn.textContent = on ? '[PITCH LOCK: ON]' : '[PITCH LOCK: OFF]';
+      pitchBtn.classList.toggle('active', on);
+      try { localStorage.setItem('carmenPitchLock', on ? 'on' : 'off'); } catch (e) {}
+    }
+
+    pitchBtn.addEventListener('click', () => setPitchLock(!audioDialogue.preservesPitch));
+    let savedPitchLock = 'off';
+    try { savedPitchLock = localStorage.getItem('carmenPitchLock') || 'off'; } catch (e) {}
+    setPitchLock(savedPitchLock === 'on');
 
     // Reversed stems follow the DX/MX faders
     audioDialogue.addEventListener('volumechange', () => { revDialogue.volume = audioDialogue.volume; });
