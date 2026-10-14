@@ -170,6 +170,45 @@
       object-fit: contain;
     }
 
+    /* Picture area inside the bezel; 4:3 mode crops it like a pan-and-scan tape */
+    .screen-frame {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      max-width: 100%;
+      overflow: hidden;
+    }
+
+    .video-screen.ratio-43 .screen-frame {
+      width: auto;
+      aspect-ratio: 4 / 3;
+    }
+
+    .screen-frame video {
+      position: absolute;
+      inset: 0;
+    }
+
+    .video-screen.ratio-43 .screen-frame video {
+      object-fit: cover;
+    }
+
+    /* Reversed copy sits on top of the main video, shown only while rewinding */
+    #revVideo { opacity: 0; }
+    .video-screen.reversing #revVideo { opacity: 1; }
+
+    /* On-Screen Display (VCR style) */
+    .vhs-osd {
+      position: absolute;
+      top: 6%;
+      left: 5%;
+      color: #ffffff;
+      font-size: clamp(18px, 5vmin, 48px);
+      letter-spacing: 3px;
+      text-shadow: 2px 2px 0 #000, -1px -1px 0 #000;
+      pointer-events: none;
+    }
+
     /* Phosphor Status Bar (under video) */
     .readout-strip {
       background: transparent;
@@ -276,6 +315,11 @@
       border-bottom: 2px solid var(--btn-bevel-hi);
       background: #07152c;
       transform: translate(1px, 1px);
+    }
+
+    .term-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
 
     .term-btn.primary {
@@ -603,8 +647,13 @@
 
         <!-- Clean Video (No overlay, 100% crisp) -->
         <div class="video-screen" id="videoWrapper">
-          <video id="mainVideo" playsinline preload="auto" src="https://storage.googleapis.com/thelemonyfresh_media_share/other_peoples_money/full_video.mp4">
-          </video>
+          <div class="screen-frame">
+            <video id="mainVideo" playsinline preload="auto" src="https://storage.googleapis.com/thelemonyfresh_media_share/other_peoples_money/full_video.mp4">
+            </video>
+            <video id="revVideo" playsinline muted preload="metadata" src="https://storage.googleapis.com/thelemonyfresh_media_share/other_peoples_money/full_video_rev.mp4">
+            </video>
+            <div class="vhs-osd" id="vhsOsd"></div>
+          </div>
         </div>
 
         <!-- Phosphor Status Line Under Video -->
@@ -627,17 +676,21 @@
         <!-- Hardware Pushbutton Transport Deck -->
         <div class="control-deck">
           <div class="deck-buttons">
-            <button class="term-btn" id="prevChapterBtn">[◄◄ PREV CH]</button>
+            <button class="term-btn" id="prevChapterBtn">[|◄ PREV CH]</button>
+            <button class="term-btn" id="shuttleRewBtn" disabled title="Reverse media not loaded">[◄◄ REW]</button>
             <button class="term-btn primary" id="playBtn">
               <span id="playIcon">►</span> [PLAY]
             </button>
-            <button class="term-btn" id="nextChapterBtn">[NEXT CH ►►]</button>
+            <button class="term-btn" id="shuttleFfBtn">[FF ►►]</button>
+            <button class="term-btn" id="nextChapterBtn">[NEXT CH ►|]</button>
             <button class="term-btn" id="rewindBtn">[◄ -5 SEC]</button>
             <button class="term-btn" id="forwardBtn">[+5 SEC ►]</button>
+            <button class="term-btn" id="aspectBtn">[ASPECT: WIDE]</button>
+            <button class="term-btn" id="pitchBtn">[PITCH LOCK: OFF]</button>
             <button class="term-btn" id="fullscreenBtn">[⛶ FULLSCREEN]</button>
           </div>
           <div style="font-size: 15px; color: #7dd3fc;" class="keys-hint">
-            KEYS: [SPACE]=PLAY/PAUSE | [F]=FULLSCREEN | [P/N]=CHAPTER
+            KEYS: [SPACE]=PLAY/PAUSE | [J/L]=REW/FF | [A]=ASPECT | [F]=FULLSCREEN | [P/N]=CHAPTER
           </div>
         </div>
 
@@ -695,6 +748,10 @@
   <audio id="audioDialogue" preload="auto" src="https://storage.googleapis.com/thelemonyfresh_media_share/other_peoples_money/full_dialogue.m4a"></audio>
   <audio id="audioSoundtrack" preload="auto" src="https://storage.googleapis.com/thelemonyfresh_media_share/other_peoples_money/full_soundtrack.m4a"></audio>
 
+  <!-- Reversed Media for REW (built by pipeline_reverse.sh) -->
+  <audio id="revDialogue" preload="metadata" src="https://storage.googleapis.com/thelemonyfresh_media_share/other_peoples_money/full_dialogue_rev.m4a"></audio>
+  <audio id="revSoundtrack" preload="metadata" src="https://storage.googleapis.com/thelemonyfresh_media_share/other_peoples_money/full_soundtrack_rev.m4a"></audio>
+
   <script>
     const fullFilmChapters = [
       { id: 1, start: "00:00:00", sec: 0, title: "Opening / Wall Street" },
@@ -750,6 +807,15 @@
     const presetSoundtrack = document.getElementById('presetSoundtrack');
     const presetFull = document.getElementById('presetFull');
 
+    const revVideo = document.getElementById('revVideo');
+    const revDialogue = document.getElementById('revDialogue');
+    const revSoundtrack = document.getElementById('revSoundtrack');
+    const shuttleRewBtn = document.getElementById('shuttleRewBtn');
+    const shuttleFfBtn = document.getElementById('shuttleFfBtn');
+    const aspectBtn = document.getElementById('aspectBtn');
+    const pitchBtn = document.getElementById('pitchBtn');
+    const vhsOsd = document.getElementById('vhsOsd');
+
     // Video native audio muted; stems deliver audio
     video.muted = true;
 
@@ -761,6 +827,9 @@
             video.src = 'media/full_video.mp4';
             audioDialogue.src = 'media/full_dialogue.m4a';
             audioSoundtrack.src = 'media/full_soundtrack.m4a';
+            revVideo.src = 'media/full_video_rev.mp4';
+            revDialogue.src = 'media/full_dialogue_rev.m4a';
+            revSoundtrack.src = 'media/full_soundtrack_rev.m4a';
           }
         })
         .catch(() => {});
@@ -807,6 +876,7 @@
     }
 
     function seekToChapter(sec) {
+      if (shuttleDir) return stopShuttle(true, sec);
       video.currentTime = sec;
       syncAudioToVideo();
       if (video.paused) togglePlay();
@@ -814,7 +884,7 @@
     }
 
     function updateActiveChapterUI() {
-      const cur = video.currentTime;
+      const cur = filmTime();
       let activeIndex = 0;
       for (let i = 0; i < fullFilmChapters.length; i++) {
         if (cur >= fullFilmChapters[i].sec) {
@@ -840,7 +910,7 @@
     }
 
     prevChapterBtn.addEventListener('click', () => {
-      const cur = video.currentTime;
+      const cur = filmTime();
       let prevSec = 0;
       for (let i = fullFilmChapters.length - 1; i >= 0; i--) {
         if (fullFilmChapters[i].sec < cur - 2) {
@@ -852,7 +922,7 @@
     });
 
     nextChapterBtn.addEventListener('click', () => {
-      const cur = video.currentTime;
+      const cur = filmTime();
       let nextSec = (video.duration || 6056);
       for (let i = 0; i < fullFilmChapters.length; i++) {
         if (fullFilmChapters[i].sec > cur + 1) {
@@ -864,71 +934,240 @@
     });
 
     function togglePlay() {
+      if (shuttleDir) return stopShuttle(true);
       if (video.paused) {
         syncAudioToVideo();
         audioDialogue.play();
         audioSoundtrack.play();
         video.play();
-        playIcon.textContent = '❚❚';
-        playBtn.childNodes[2].nodeValue = ' [PAUSE]';
       } else {
         video.pause();
         audioDialogue.pause();
         audioSoundtrack.pause();
-        playIcon.textContent = '►';
-        playBtn.childNodes[2].nodeValue = ' [PLAY]';
       }
+      updatePlayButton();
+    }
+
+    function updatePlayButton() {
+      const playing = !video.paused && !shuttleDir;
+      playIcon.textContent = playing ? '❚❚' : '►';
+      playBtn.childNodes[2].nodeValue = playing ? ' [PAUSE]' : ' [PLAY]';
     }
 
     playBtn.addEventListener('click', togglePlay);
     video.addEventListener('click', togglePlay);
+    revVideo.addEventListener('click', togglePlay);
+
+    // VHS Shuttle: FF plays the forward file fast; REW plays the pre-reversed
+    // copy forward, mirrored around the film duration (film time t = duration - t).
+    const REW_SPEEDS = [1, 2, 4, 8, 16];
+    const FF_SPEEDS = [2, 4, 8, 16];
+    const MAX_AUDIBLE_SPEED = 4; // browsers mute faster audio anyway
+    const fwdSet = [video, audioDialogue, audioSoundtrack];
+    const revSet = [revVideo, revDialogue, revSoundtrack];
+    let shuttleDir = 0; // -1 = REW, 0 = normal, 1 = FF
+    let shuttleStep = 0;
+    let resumeAfterShuttle = false;
+    let cueToken = 0;
+
+    // Pitch lock: OFF = tape-style pitch shift during FF/REW, ON = time-stretch at normal pitch
+    function setPitchLock(on) {
+      [audioDialogue, audioSoundtrack, revDialogue, revSoundtrack].forEach(a => {
+        a.preservesPitch = on;
+        a.webkitPreservesPitch = on;
+      });
+      pitchBtn.textContent = on ? '[PITCH LOCK: ON]' : '[PITCH LOCK: OFF]';
+      pitchBtn.classList.toggle('active', on);
+      try { localStorage.setItem('carmenPitchLock', on ? 'on' : 'off'); } catch (e) {}
+    }
+
+    pitchBtn.addEventListener('click', () => setPitchLock(!audioDialogue.preservesPitch));
+    let savedPitchLock = 'off';
+    try { savedPitchLock = localStorage.getItem('carmenPitchLock') || 'off'; } catch (e) {}
+    setPitchLock(savedPitchLock === 'on');
+
+    // Reversed stems follow the DX/MX faders
+    audioDialogue.addEventListener('volumechange', () => { revDialogue.volume = audioDialogue.volume; });
+    audioSoundtrack.addEventListener('volumechange', () => { revSoundtrack.volume = audioSoundtrack.volume; });
+
+    function enableRew() {
+      shuttleRewBtn.disabled = false;
+      shuttleRewBtn.title = '';
+    }
+
+    revVideo.addEventListener('loadedmetadata', enableRew);
+    if (revVideo.readyState >= 1) enableRew();
+
+    function isReversing() {
+      return videoWrapper.classList.contains('reversing');
+    }
+
+    function liveSet() {
+      return isReversing() ? revSet : fwdSet;
+    }
+
+    function filmTime() {
+      return isReversing() ? revVideo.duration - revVideo.currentTime : video.currentTime;
+    }
+
+    function elementTime(el, t) {
+      return revSet.includes(el) ? Math.max(0, el.duration - t) : t;
+    }
+
+    function shuttleSpeed() {
+      if (shuttleDir < 0) return REW_SPEEDS[shuttleStep];
+      if (shuttleDir > 0) return FF_SPEEDS[shuttleStep];
+      return 1;
+    }
+
+    function playEl(el) {
+      const p = el.play();
+      if (p) p.catch(() => {});
+    }
+
+    function runSet(set, speed) {
+      const [v, ...stems] = set;
+      v.playbackRate = speed;
+      playEl(v);
+      stems.forEach(a => {
+        if (speed > MAX_AUDIBLE_SPEED) {
+          a.pause();
+        } else {
+          a.playbackRate = speed;
+          playEl(a);
+        }
+      });
+    }
+
+    // Seek a whole set to film time t; fn runs once its video has the new frame
+    function cueSet(set, t, fn) {
+      const token = ++cueToken;
+      set.forEach(el => { el.currentTime = elementTime(el, t); });
+      set[0].addEventListener('seeked', () => { if (token === cueToken) fn(); }, { once: true });
+    }
+
+    function startShuttle(dir) {
+      const speeds = dir < 0 ? REW_SPEEDS : FF_SPEEDS;
+      const set = dir < 0 ? revSet : fwdSet;
+      if (dir === shuttleDir) {
+        shuttleStep = Math.min(shuttleStep + 1, speeds.length - 1);
+        runSet(set, shuttleSpeed());
+        updateShuttleUI();
+        return;
+      }
+
+      const t = filmTime();
+      if (!shuttleDir) resumeAfterShuttle = !video.paused;
+      shuttleDir = dir;
+      shuttleStep = 0;
+      updateShuttleUI();
+
+      if (set === liveSet()) {
+        cueToken++; // cancel any stop that is still cueing
+        runSet(set, shuttleSpeed());
+        return;
+      }
+      // Hold the current frame until the other file is cued
+      liveSet().forEach(el => el.pause());
+      cueSet(set, t, () => {
+        videoWrapper.classList.toggle('reversing', dir < 0);
+        runSet(set, shuttleSpeed());
+      });
+    }
+
+    function stopShuttle(play, t = filmTime()) {
+      shuttleDir = 0;
+      shuttleStep = 0;
+      updateShuttleUI();
+      revSet.forEach(el => el.pause());
+      fwdSet.forEach(el => { el.pause(); el.playbackRate = 1; });
+      cueSet(fwdSet, t, () => {
+        videoWrapper.classList.remove('reversing');
+        if (play) runSet(fwdSet, 1);
+        updatePlayButton();
+      });
+    }
+
+    function updateShuttleUI() {
+      if (shuttleDir < 0) vhsOsd.textContent = `◄◄ REW x${shuttleSpeed()}`;
+      else if (shuttleDir > 0) vhsOsd.textContent = `FF ►► x${shuttleSpeed()}`;
+      else vhsOsd.textContent = '';
+      shuttleRewBtn.classList.toggle('active', shuttleDir < 0);
+      shuttleFfBtn.classList.toggle('active', shuttleDir > 0);
+      updatePlayButton();
+    }
+
+    shuttleRewBtn.addEventListener('click', () => startShuttle(-1));
+    shuttleFfBtn.addEventListener('click', () => startShuttle(1));
+    revVideo.addEventListener('ended', () => { if (shuttleDir < 0) stopShuttle(false, 0); });
+    video.addEventListener('ended', () => { if (shuttleDir > 0) stopShuttle(false, video.duration); });
 
     function syncAudioToVideo() {
-      const vTime = video.currentTime;
-      if (Math.abs(audioDialogue.currentTime - vTime) > 0.05) {
-        audioDialogue.currentTime = vTime;
-      }
-      if (Math.abs(audioSoundtrack.currentTime - vTime) > 0.05) {
-        audioSoundtrack.currentTime = vTime;
-      }
+      const speed = shuttleSpeed();
+      if (speed > MAX_AUDIBLE_SPEED) return;
+      const t = filmTime();
+      liveSet().slice(1).forEach(a => {
+        const aTime = elementTime(a, t);
+        if (Math.abs(a.currentTime - aTime) > 0.05 * speed) {
+          a.currentTime = aTime;
+        }
+      });
     }
 
     video.addEventListener('seeking', syncAudioToVideo);
     video.addEventListener('seeked', syncAudioToVideo);
 
-    video.addEventListener('timeupdate', () => {
+    function onTimeUpdate() {
       syncAudioToVideo();
       const dur = video.duration || 6056.3;
-      const pct = (video.currentTime / dur) * 100;
+      const cur = filmTime();
+      const pct = (cur / dur) * 100;
       timelineFill.style.width = pct + '%';
-      timeDisplay.textContent = `${formatTime(video.currentTime)} / ${formatTime(dur)}`;
+      timeDisplay.textContent = `${formatTime(cur)} / ${formatTime(dur)}`;
       updateActiveChapterUI();
-    });
+    }
+
+    video.addEventListener('timeupdate', onTimeUpdate);
+    revVideo.addEventListener('timeupdate', onTimeUpdate);
+
+    function seekTo(sec) {
+      if (shuttleDir) return stopShuttle(resumeAfterShuttle, sec);
+      video.currentTime = sec;
+      syncAudioToVideo();
+    }
 
     timelineBar.addEventListener('click', (e) => {
       const rect = timelineBar.getBoundingClientRect();
       const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
       const dur = video.duration || 6056.3;
-      video.currentTime = ratio * dur;
-      syncAudioToVideo();
+      seekTo(ratio * dur);
     });
 
     rewindBtn.addEventListener('click', () => {
-      video.currentTime = Math.max(0, video.currentTime - 5);
-      syncAudioToVideo();
+      seekTo(Math.max(0, filmTime() - 5));
     });
 
     forwardBtn.addEventListener('click', () => {
-      video.currentTime = Math.min(video.duration, video.currentTime + 5);
-      syncAudioToVideo();
+      seekTo(Math.min(video.duration, filmTime() + 5));
     });
 
+    // Aspect: original widescreen or 4:3 center crop (for 4:3 monitors)
+    function setAspect(is43) {
+      videoWrapper.classList.toggle('ratio-43', is43);
+      aspectBtn.textContent = is43 ? '[ASPECT: 4:3]' : '[ASPECT: WIDE]';
+      try { localStorage.setItem('carmenAspect', is43 ? '4:3' : 'wide'); } catch (e) {}
+    }
+
+    aspectBtn.addEventListener('click', () => setAspect(!videoWrapper.classList.contains('ratio-43')));
+    try { if (localStorage.getItem('carmenAspect') === '4:3') setAspect(true); } catch (e) {}
+
+    // Fullscreen the whole screen (not the bare video) so the aspect crop and OSD carry over
     function toggleFullscreen() {
       if (!document.fullscreenElement) {
-        if (video.requestFullscreen) {
-          video.requestFullscreen();
-        } else if (videoWrapper.requestFullscreen) {
+        if (videoWrapper.requestFullscreen) {
           videoWrapper.requestFullscreen();
+        } else if (video.webkitEnterFullscreen) {
+          video.webkitEnterFullscreen();
         }
       } else {
         if (document.exitFullscreen) {
@@ -1007,9 +1246,17 @@
         e.preventDefault();
         togglePlay();
       } else if (e.code === 'ArrowLeft') {
-        video.currentTime = Math.max(0, video.currentTime - 5);
+        rewindBtn.click();
       } else if (e.code === 'ArrowRight') {
-        video.currentTime = Math.min(video.duration, video.currentTime + 5);
+        forwardBtn.click();
+      } else if (e.key === 'j' || e.key === 'J') {
+        shuttleRewBtn.click();
+      } else if (e.key === 'k' || e.key === 'K') {
+        togglePlay();
+      } else if (e.key === 'l' || e.key === 'L') {
+        shuttleFfBtn.click();
+      } else if (e.key === 'a' || e.key === 'A') {
+        aspectBtn.click();
       } else if (e.key === 'p' || e.key === 'P') {
         prevChapterBtn.click();
       } else if (e.key === 'n' || e.key === 'N') {

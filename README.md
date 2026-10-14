@@ -12,9 +12,14 @@ An interactive retro-terminal web player for Norman Jewison's 1991 Wall Street c
   - `[MASTER SUM]` – Original balanced stereo mix.
   - Granular faders and instant hardware mutes per stem.
 - **23 Scened Chapter Records**: One-click seeking across all major dramatic scenes and speeches.
+- **VHS Shuttle Search**: `[◄◄ REW]` / `[FF ►►]` step through 1x–16x (REW) and 2x–16x (FF) from the current position, with a VCR on-screen display and pitch-shifted stem audio up to 4x (silent above, like a real deck). Rewind plays pre-reversed copies of the media (see `pipeline_reverse.sh`).
+- **Pitch Lock**: `[PITCH LOCK]` keeps stem audio at its normal pitch during FF/REW (browser time-stretching) instead of the default tape-style pitch shift.
+- **4:3 Aspect Mode**: `[ASPECT]` toggles between the original widescreen frame and a centered 4:3 pan-and-scan crop, carried into fullscreen for 4:3 video monitors.
 - **Responsive Multi-Device Layout**: Fully adaptive across desktop workstations, tablets, and mobile devices.
 - **Hardware Keyboard Control**:
-  - `[SPACE]` – Play / Pause
+  - `[SPACE]` / `[K]` – Play / Pause (also exits REW/FF)
+  - `[J]` / `[L]` – Rewind / Fast-Forward (press again for faster)
+  - `[A]` – Toggle 4:3 aspect
   - `[F]` – Fullscreen
   - `[P]` / `[N]` – Previous / Next Chapter
   - `[1]` / `[2]` / `[3]` – Dialogue Solo / Score Solo / Master Sum
@@ -23,6 +28,20 @@ An interactive retro-terminal web player for Norman Jewison's 1991 Wall Street c
 ## Separation Pipeline
 
 Audio stems were separated using Demucs HTDemucs v4 in 4-stem mode (`vocals`, `drums`, `bass`, `other`), recombining `drums + bass + other` into an isolated high-bitrate AAC score track and preserving clean dialogue in a matching stem, synchronized to sub-millisecond precision with the video stream.
+
+### Reversed Media (for REW)
+
+`pipeline_reverse.sh` builds time-reversed copies of the served files (`full_video.mp4`, `full_dialogue.m4a`, `full_soundtrack.m4a` in `web/media/`) for the rewind feature. It reverses the media in short chunks (ffmpeg's reverse filters hold everything in memory) and verifies the frame count and durations match the originals:
+
+```bash
+DIR=/path/to/project JOBS=8 ./pipeline_reverse.sh
+```
+
+Upload the three outputs (`full_video_rev.mp4`, `full_dialogue_rev.m4a`, `full_soundtrack_rev.m4a`) next to the originals in the bucket. Until they exist, the `[◄◄ REW]` button stays disabled and everything else works as before.
+
+### Local Development
+
+Serve the repo root with a server that supports HTTP Range requests (needed for seeking), e.g. `npx http-server -p 8000`, and open `http://localhost:8000`. If `media/full_video.mp4` exists (`media` is a symlink to `web/media`, recreate it with `ln -s web/media media`), the player uses the local files instead of Cloud Storage.
 
 ## Live Deployment
 

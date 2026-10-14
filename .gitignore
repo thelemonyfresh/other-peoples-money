@@ -1,5 +1,5 @@
 # Large media files (hosted on Google Cloud Storage)
-media/
+media
 web/media/
 *.mp4
 *.m4a
